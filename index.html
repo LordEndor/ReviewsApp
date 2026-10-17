@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111318">
+<title>Review Meme Maker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+:root{
+  --bg:#f4f5f7; --panel:#fff; --ink:#15171c; --muted:#6b7280; --line:#e3e5ea;
+  --accent:#5b5bf7; --accent-ink:#fff; --chip:#eceef2; --stage:#e9ebef;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#111318; --panel:#1b1e25; --ink:#eef0f4; --muted:#9aa1ad; --line:#2b2f38;
+    --accent:#7c7cff; --accent-ink:#fff; --chip:#252932; --stage:#0b0d11;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#111318; --panel:#1b1e25; --ink:#eef0f4; --muted:#9aa1ad; --line:#2b2f38;
+  --accent:#7c7cff; --accent-ink:#fff; --chip:#252932; --stage:#0b0d11;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.4 Inter,system-ui,sans-serif;-webkit-tap-highlight-color:transparent;padding-bottom:96px}
+header{position:sticky;top:0;z-index:5;background:var(--bg);padding:14px 16px 8px}
+h1{font-size:18px;margin:0 0 10px;font-weight:700;letter-spacing:-.01em}
+h1 span{color:var(--muted);font-weight:500;font-size:13px;margin-left:6px}
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px 4px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:0;background:var(--chip);color:var(--ink);padding:9px 14px;border-radius:999px;font:500 14px Inter,sans-serif;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+main{max-width:1100px;margin:0 auto;padding:0 16px}
+.stage{background:var(--stage);border-radius:16px;padding:20px 12px;display:flex;justify-content:center;margin:8px 0 16px;overflow:hidden}
+#capture{width:100%;max-width:420px}
+.form{background:var(--panel);border-radius:16px;padding:16px;display:grid;gap:14px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{display:grid;gap:6px;font-size:13px;color:var(--muted);font-weight:500}
+input[type=text],input[type=number],input[type=date],textarea,select{
+  width:100%;font:16px Inter,sans-serif;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;outline:none}
+input:focus,textarea:focus{border-color:var(--accent)}
+textarea{min-height:110px;resize:vertical}
+.rate{display:flex;gap:6px}
+.rate button{flex:1;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:10px 0;font:600 15px Inter;cursor:pointer}
+.rate button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.check{display:flex;align-items:center;gap:10px;color:var(--ink);font-size:14px}
+.check input{width:20px;height:20px;accent-color:var(--accent)}
+.avatar-row{display:flex;gap:10px;align-items:center}
+.btn{border:0;border-radius:12px;padding:12px 16px;font:600 15px Inter,sans-serif;cursor:pointer}
+.btn.ghost{background:var(--chip);color:var(--ink)}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:6;display:flex;gap:10px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line)}
+.bar .btn{flex:1}
+.hidden{display:none!important}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+@media (min-width:900px){
+  main{display:grid;grid-template-columns:1fr 400px;gap:20px;align-items:start}
+  .stage{position:sticky;top:110px;margin:8px 0;min-height:420px;align-items:center}
+  .form{margin-top:8px}
+  .bar{position:sticky;bottom:auto;top:auto;border:0;background:none;padding:0;backdrop-filter:none}
+  body{padding-bottom:24px}
+}
+
+/* ---------- Review card styles (always light, like the real sites) ---------- */
+.card{background:#fff;color:#202124;text-align:left;word-wrap:break-word}
+.av{border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:500;flex:none;overflow:hidden;background-size:cover;background-position:center}
+.stars{display:inline-flex;align-items:center;vertical-align:middle}
+.stars svg{display:block}
+
+/* Google */
+.g{font-family:Roboto,Arial,sans-serif;padding:16px 16px 12px;border-radius:8px}
+.g .head{display:flex;gap:12px;align-items:center}
+.g .av{width:40px;height:40px;font-size:18px}
+.g .nm{font-size:15px;font-weight:500;color:#202124}
+.g .sub{font-size:13px;color:#70757a;margin-top:1px}
+.g .meta{display:flex;align-items:center;gap:8px;margin:12px 0 6px;font-size:13px;color:#70757a}
+.g .new{background:#e8f0fe;color:#1967d2;font-size:11px;font-weight:500;padding:1px 6px;border-radius:4px}
+.g .txt{font-size:14px;line-height:20px;color:#202124;white-space:pre-wrap}
+.g .acts{display:flex;gap:8px;margin-top:12px}
+.g .acts span{display:inline-flex;align-items:center;gap:6px;border:1px solid #dadce0;border-radius:18px;padding:6px 12px;font-size:13px;color:#3c4043;font-weight:500}
+.g .place{border-bottom:1px solid #ebebeb;padding-bottom:12px;margin-bottom:14px}
+.g .place b{font-size:20px;font-weight:400;color:#202124;display:block}
+.g .place .r{font-size:14px;color:#70757a;display:flex;gap:6px;align-items:center;margin-top:4px}
+
+/* Amazon */
+.a{font-family:"Amazon Ember",Arial,sans-serif;padding:16px;color:#0f1111}
+.a .head{display:flex;gap:10px;align-items:center;margin-bottom:6px}
+.a .av{width:34px;height:34px;background:#e3e6e6}
+.a .nm{font-size:13px;color:#0f1111}
+.a .ttl{display:flex;gap:6px;align-items:center;margin-bottom:4px}
+.a .ttl b{font-size:14px;font-weight:700;line-height:20px}
+.a .dt{font-size:13px;color:#565959;margin-bottom:4px}
+.a .vp{font-size:12px;font-weight:700;color:#c45500;margin-bottom:6px}
+.a .vp span{color:#565959;font-weight:400}
+.a .txt{font-size:14px;line-height:20px;white-space:pre-wrap}
+.a .hf{font-size:12px;color:#565959;margin-top:10px}
+.a .acts{display:flex;align-items:center;gap:12px;margin-top:8px;font-size:13px;color:#565959}
+.a .hbtn{border:1px solid #d5d9d9;border-radius:100px;padding:5px 20px;color:#0f1111;box-shadow:0 2px 5px rgba(15,17,17,.15)}
+.a .place{font-size:20px;font-weight:700;border-bottom:1px solid #e7e7e7;padding-bottom:10px;margin-bottom:14px}
+
+/* Yelp */
+.y{font-family:"Open Sans","Helvetica Neue",Arial,sans-serif;padding:16px;color:#2d2e2f}
+.y .head{display:flex;gap:12px;align-items:center}
+.y .av{width:48px;height:48px;border-radius:50%;font-size:20px}
+.y .nm{font-size:16px;font-weight:700}
+.y .loc{font-size:13px;color:#6e7072;font-weight:600}
+.y .cnt{font-size:13px;color:#6e7072;display:flex;gap:10px;margin-top:2px}
+.y .meta{display:flex;align-items:center;gap:8px;margin:14px 0 10px;font-size:14px;color:#6e7072}
+.y .txt{font-size:15px;line-height:22px;white-space:pre-wrap}
+.y .acts{display:flex;gap:8px;margin-top:14px}
+.y .acts span{border:1px solid #c8c9ca;border-radius:4px;padding:5px 10px;font-size:13px;font-weight:600;color:#2d2e2f}
+.y .place{font-size:22px;font-weight:800;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #ebebeb}
+
+/* Tripadvisor */
+.t{font-family:"Trip Sans",Arial,sans-serif;padding:16px;color:#000;border-radius:12px}
+.t .head{display:flex;gap:10px;align-items:center;margin-bottom:12px}
+.t .av{width:36px;height:36px;font-size:16px}
+.t .nm{font-size:14px;font-weight:700}
+.t .sub{font-size:12px;color:#333}
+.t .ttl{font-size:16px;font-weight:700;margin:8px 0 6px}
+.t .dt{font-size:14px;color:#333;margin-bottom:8px}
+.t .txt{font-size:14px;line-height:20px;white-space:pre-wrap}
+.t .foot{font-size:12px;color:#333;margin-top:12px}
+.t .place{font-size:22px;font-weight:700;margin-bottom:14px}
+
+/* Trustpilot */
+.tp{font-family:Helvetica,Arial,sans-serif;padding:20px 18px;color:#191919;border-radius:8px}
+.tp .head{display:flex;gap:12px;align-items:center;padding-bottom:14px;border-bottom:1px solid #e5e5dd;margin-bottom:14px}
+.tp .av{width:44px;height:44px;font-size:16px;font-weight:700;color:#191919}
+.tp .nm{font-size:15px;font-weight:600}
+.tp .sub{font-size:12px;color:#6c6c85}
+.tp .meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:12px;color:#6c6c85}
+.tp .ttl{font-size:17px;font-weight:700;margin-bottom:6px}
+.tp .txt{font-size:14px;line-height:21px;white-space:pre-wrap}
+.tp .doe{font-size:13px;margin-top:12px}
+.tp .doe b{font-weight:700}
+.tp .acts{display:flex;gap:18px;margin-top:14px;padding-top:12px;border-top:1px solid #e5e5dd;font-size:13px;color:#6c6c85}
+.tp .place{font-size:20px;font-weight:700;margin-bottom:14px}
+
+/* App Store */
+.as{font-family:-apple-system,"SF Pro Text","Helvetica Neue",Inter,sans-serif;background:#f2f2f7;padding:16px;border-radius:14px;color:#000}
+.as .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.as .ttl{font-size:16px;font-weight:600;line-height:21px}
+.as .dt{font-size:14px;color:#8a8a8e;white-space:nowrap}
+.as .row{display:flex;justify-content:space-between;align-items:center;margin:4px 0 8px}
+.as .nm{font-size:14px;color:#8a8a8e}
+.as .txt{font-size:15px;line-height:20px;white-space:pre-wrap}
+.as .place{font-size:22px;font-weight:700;margin-bottom:12px}
+.as-wrap{background:#fff;padding:16px;border-radius:14px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Review Meme Maker <span>for laughs only</span></h1>
+  <div class="chips" id="platforms" role="group" aria-label="Platform"></div>
+</header>
+
+<main>
+  <div class="stage"><div id="capture"></div></div>
+
+  <div>
+    <form class="form" id="form" onsubmit="return false">
+      <label data-for="all">Place or product name (optional header)
+        <input type="text" id="place" placeholder="e.g. Dave's Apartment">
+      </label>
+
+      <div class="avatar-row">
+        <label style="flex:1">Reviewer name
+          <input type="text" id="name">
+        </label>
+        <label style="flex:none">Photo
+          <input type="file" id="photo" accept="image/*" class="hidden">
+          <button type="button" class="btn ghost" id="photoBtn">Upload</button>
+        </label>
+      </div>
+
+      <label>Rating
+        <div class="rate" id="rate"></div>
+      </label>
+
+      <div class="row2">
+        <label>Date
+          <input type="date" id="date">
+        </label>
+        <label data-for="g y t tp">Review count
+          <input type="number" id="count" min="0" inputmode="numeric">
+        </label>
+        <label data-for="a">Helpful votes
+          <input type="number" id="helpful" min="0" inputmode="numeric">
+        </label>
+        <label data-for="as">Version
+          <input type="text" id="version" placeholder="optional">
+        </label>
+      </div>
+
+      <label data-for="a t tp as">Review title
+        <input type="text" id="title">
+      </label>
+
+      <label>Review
+        <textarea id="body"></textarea>
+      </label>
+
+      <label data-for="y t tp">Location
+        <input type="text" id="loc">
+      </label>
+
+      <label class="check" data-for="g"><input type="checkbox" id="guide"> Local Guide badge</label>
+      <label class="check" data-for="a"><input type="checkbox" id="verified"> Verified Purchase</label>
+      <label class="check" data-for="g"><input type="checkbox" id="isNew"> "NEW" tag</label>
+    </form>
+  </div>
+</main>
+
+<div class="bar">
+  <button class="btn ghost" id="random" type="button">🎲 Surprise me</button>
+  <button class="btn primary" id="save" type="button">Save image</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const PLATFORMS = [
+  {id:'g',  label:'Google'},
+  {id:'a',  label:'Amazon'},
+  {id:'y',  label:'Yelp'},
+  {id:'t',  label:'Tripadvisor'},
+  {id:'tp', label:'Trustpilot'},
+  {id:'as', label:'App Store'},
+];
+
+const PRESETS = [
+  {place:"Kevin's Couch", name:"Mike Thompson", rating:1, title:"Would not sleep here again",
+   body:"Stayed 3 nights. Host kept asking when I was 'planning to leave.' Snacks were rationed. The dog judged me the entire time.\n\nAlso there is no breakfast. I asked."},
+  {place:"Sarah's Cooking", name:"Jess R.", rating:2, title:"Brave attempt",
+   body:"Ordered the 'famous lasagna'. Fire alarm went off twice, which I think added to the ambiance. Smoke detector gave it 5 stars."},
+  {place:"Tom (Human Male, 29)", name:"Former Roommate", rating:3, title:"Solid product, questionable firmware",
+   body:"Pros: tall, can reach high shelves, good at Mario Kart.\nCons: leaves exactly one bite of food in the fridge so it 'doesn't count'. Battery dies after 9pm."},
+  {place:"Group Chat", name:"Lurker_99", rating:1, title:"Too many notifications",
+   body:"Muted it in 2019. Still somehow 4,812 unread messages. 90% are memes from Dan. Cannot recommend, cannot leave."},
+  {place:"Mom's House", name:"Your Cousin", rating:5, title:"Five stars, no notes",
+   body:"Free food. Laundry magically done. WiFi password hasn't changed since 2011. Only downside: asked when I'm getting married 6 times."},
+  {place:"Brian's Driving", name:"Shotgun Rider", rating:1, title:"Fear-based experience",
+   body:"Took the roundabout four times 'to be safe'. Uses the horn as a greeting. I have found religion."},
+];
+
+const AV_COLORS = ['#1a73e8','#e8710a','#188038','#a142f4','#d93025','#12b5cb','#e52592','#5f6368'];
+
+const S = {
+  platform:'g', place:'', name:'Mike Thompson', photo:null, rating:1,
+  date:new Date(Date.now()-14*864e5).toISOString().slice(0,10),
+  count:23, helpful:47, version:'', title:'Would not sleep here again',
+  body:PRESETS[0].body, loc:'Austin, TX', guide:true, verified:true, isNew:false,
+};
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const STAR = 'M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z';
+
+function hash(s){let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))|0;return Math.abs(h)}
+function initials(n,two){const p=n.trim().split(/\s+/).filter(Boolean);if(!p.length)return'?';return two&&p[1]?(p[0][0]+p[1][0]).toUpperCase():p[0][0].toUpperCase()}
+function avatar(bg,two){
+  if(S.photo) return `<div class="av" style="background-image:url(${S.photo})"></div>`;
+  return `<div class="av" style="background:${bg}">${esc(initials(S.name,two))}</div>`;
+}
+function d(){return new Date(S.date+'T12:00:00')}
+function fmtLong(){return d().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}
+function fmtShort(){return d().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}
+function fmtNum(){const x=d();return `${x.getMonth()+1}/${x.getDate()}/${x.getFullYear()}`}
+function relative(){
+  const days=Math.round((Date.now()-d())/864e5);
+  if(days<=0) return 'today'; if(days===1) return 'a day ago'; if(days<7) return `${days} days ago`;
+  if(days<14) return 'a week ago'; if(days<30) return `${Math.floor(days/7)} weeks ago`;
+  if(days<60) return 'a month ago'; if(days<365) return `${Math.floor(days/30)} months ago`;
+  if(days<730) return 'a year ago'; return `${Math.floor(days/365)} years ago`;
+}
+
+function starsSvg(n,size,on,off,stroke){
+  let h='<span class="stars" style="gap:1px">';
+  for(let i=1;i<=5;i++){
+    const f=i<=n;
+    h+=`<svg width="${size}" height="${size}" viewBox="0 0 24 24"><path d="${STAR}" fill="${f?on:off}" ${stroke?`stroke="${stroke}" stroke-width="1.2"`:''}/></svg>`;
+  }
+  return h+'</span>';
+}
+function boxStars(n,size,colors,off,radius){
+  const c=colors[n-1]; let h='<span class="stars" style="gap:2px">';
+  for(let i=1;i<=5;i++){
+    h+=`<svg width="${size}" height="${size}" viewBox="0 0 24 24"><rect width="24" height="24" rx="${radius}" fill="${i<=n?c:off}"/><path d="${STAR}" fill="#fff" transform="translate(3.6 3.4) scale(.7)"/></svg>`;
+  }
+  return h+'</span>';
+}
+function bubbles(n,size){
+  let h='<span class="stars" style="gap:3px">';
+  for(let i=1;i<=5;i++) h+=`<svg width="${size}" height="${size}" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8.5" fill="${i<=n?'#00aa6c':'#fff'}" stroke="#00aa6c" stroke-width="1.6"/></svg>`;
+  return h+'</span>';
+}
+const ICON = {
+  like:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3c4043" stroke-width="2"><path d="M7 10v11H3V10h4zm0 0l4-8c1.7 0 3 1.3 3 3v4h5.5c1.2 0 2.1 1.1 1.9 2.3l-1.4 8c-.2 1-1 1.7-2 1.7H7"/></svg>',
+  share:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3c4043" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>',
+  person:'<svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="8" r="4.5"/><path d="M3 22c0-5 4-8 9-8s9 3 9 8z"/></svg>',
+};
+
+const RENDER = {
+  g(){
+    const bg=AV_COLORS[hash(S.name)%AV_COLORS.length];
+    const sub = S.guide ? `Local Guide · ${S.count} reviews · ${Math.max(0,S.count*3)} photos` : `${S.count} review${S.count==1?'':'s'}`;
+    return `<div class="card g">
+      ${S.place?`<div class="place"><b>${esc(S.place)}</b><div class="r">${S.rating}.0 ${starsSvg(S.rating,14,'#fbbc04','#dadce0')} <span>(1)</span></div></div>`:''}
+      <div class="head">${avatar(bg)}<div><div class="nm">${esc(S.name)}</div><div class="sub">${sub}</div></div></div>
+      <div class="meta">${starsSvg(S.rating,14,'#fbbc04','#dadce0')}<span>${relative()}</span>${S.isNew?'<span class="new">NEW</span>':''}</div>
+      <div class="txt">${esc(S.body)}</div>
+      <div class="acts"><span>${ICON.like} Like</span><span>${ICON.share} Share</span></div>
+    </div>`;
+  },
+  a(){
+    const av = S.photo ? avatar('#e3e6e6') : `<div class="av">${ICON.person}</div>`;
+    return `<div class="card a">
+      ${S.place?`<div class="place">${esc(S.place)}</div>`:''}
+      <div class="head">${av}<div class="nm">${esc(S.name)}</div></div>
+      <div class="ttl">${starsSvg(S.rating,17,'#ffa41c','#fff','#de7921')}<b>${esc(S.title)}</b></div>
+      <div class="dt">Reviewed in the United States on ${fmtLong()}</div>
+      ${S.verified?'<div class="vp">Verified Purchase</div>':''}
+      <div class="txt">${esc(S.body)}</div>
+      ${S.helpful>0?`<div class="hf">${S.helpful==1?'One person':Number(S.helpful).toLocaleString()+' people'} found this helpful</div>`:''}
+      <div class="acts"><span class="hbtn">Helpful</span><span>|</span><span>Report</span></div>
+    </div>`;
+  },
+  y(){
+    const bg=AV_COLORS[hash(S.name)%AV_COLORS.length];
+    const friends=(hash(S.name)%180)+3, photos=S.count*2;
+    return `<div class="card y">
+      ${S.place?`<div class="place">${esc(S.place)}</div>`:''}
+      <div class="head">${avatar(bg)}<div><div class="nm">${esc(S.name)}</div>
+        ${S.loc?`<div class="loc">${esc(S.loc)}</div>`:''}
+        <div class="cnt"><span>👥 ${friends}</span><span>⭐ ${S.count}</span><span>📷 ${photos}</span></div></div></div>
+      <div class="meta">${boxStars(S.rating,20,['#ffcc4b','#ffad48','#ff8742','#ff643d','#fb433c'],'#e6e6e6',5)}<span>${fmtShort()}</span></div>
+      <div class="txt">${esc(S.body)}</div>
+      <div class="acts"><span>💡 Helpful</span><span>👍 Thanks</span><span>❤️ Love this</span><span>😬 Oh no</span></div>
+    </div>`;
+  },
+  t(){
+    const bg=['#00aa6c','#004f32','#f2b203','#d2453a','#5c4cff'][hash(S.name)%5];
+    const visit=d().toLocaleDateString('en-US',{month:'long',year:'numeric'});
+    return `<div class="card t">
+      ${S.place?`<div class="place">${esc(S.place)}</div>`:''}
+      <div class="head">${avatar(bg)}<div><div class="nm">${esc(S.name)}</div><div class="sub">${S.loc?esc(S.loc)+' · ':''}${S.count} contributions</div></div></div>
+      ${bubbles(S.rating,16)}
+      <div class="ttl">${esc(S.title)}</div>
+      <div class="dt">${visit} • Friends</div>
+      <div class="txt">${esc(S.body)}</div>
+      <div class="foot">Written ${fmtLong()}</div>
+      <div class="foot" style="color:#555;margin-top:6px">This review is the subjective opinion of a Tripadvisor member and not of Tripadvisor LLC.</div>
+    </div>`;
+  },
+  tp(){
+    const bg=['#ffd1a6','#c3e8d6','#d6d3ff','#ffc8cf','#cde8ff'][hash(S.name)%5];
+    const cc=(S.loc||'US').trim();
+    const code=cc.length<=3?cc.toUpperCase():cc;
+    return `<div class="card tp">
+      ${S.place?`<div class="place">${esc(S.place)}</div>`:''}
+      <div class="head">${S.photo?avatar(bg):`<div class="av" style="background:${bg}">${esc(initials(S.name,true))}</div>`}
+        <div><div class="nm">${esc(S.name)}</div><div class="sub">${esc(code)} · ${S.count} review${S.count==1?'':'s'}</div></div></div>
+      <div class="meta">${boxStars(S.rating,22,['#ff3722','#ff8622','#ffce00','#73cf11','#00b67a'],'#dcdce6',0)}<span>${relative().replace(/^a /,'1 ').replace(' ago',' ago')}</span></div>
+      <div class="ttl">${esc(S.title)}</div>
+      <div class="txt">${esc(S.body)}</div>
+      <div class="doe"><b>Date of experience:</b> ${fmtLong()}</div>
+      <div class="acts"><span>👍 Useful</span><span>↗ Share</span></div>
+    </div>`;
+  },
+  as(){
+    return `<div class="card as-wrap">
+      ${S.place?`<div class="place" style="font-family:-apple-system,Inter,sans-serif">${esc(S.place)}</div>`:''}
+      <div class="as">
+        <div class="top"><div class="ttl">${esc(S.title)}</div><div class="dt">${fmtNum()}</div></div>
+        <div class="row">${starsSvg(S.rating,13,'#ff9500','#fff','#ff9500')}<div class="nm">${esc(S.name)}</div></div>
+        <div class="txt">${esc(S.body)}</div>
+        ${S.version?`<div class="nm" style="margin-top:8px">Version ${esc(S.version)}</div>`:''}
+      </div>
+    </div>`;
+  },
+};
+
+function render(){
+  $('capture').innerHTML = RENDER[S.platform]();
+  document.querySelectorAll('[data-for]').forEach(el=>{
+    const f=el.dataset.for; el.classList.toggle('hidden', f!=='all' && !f.split(' ').includes(S.platform));
+  });
+  document.querySelectorAll('#platforms .chip').forEach(b=>b.setAttribute('aria-pressed', b.dataset.id===S.platform));
+  document.querySelectorAll('#rate button').forEach(b=>b.setAttribute('aria-pressed', +b.dataset.v===S.rating));
+}
+
+function syncForm(){
+  for(const k of ['place','name','date','count','helpful','version','title','body','loc']) $(k).value=S[k];
+  for(const k of ['guide','verified','isNew']) $(k).checked=S[k];
+}
+
+// Build controls
+$('platforms').innerHTML = PLATFORMS.map(p=>`<button class="chip" type="button" data-id="${p.id}">${p.label}</button>`).join('');
+$('platforms').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;S.platform=b.dataset.id;render()});
+$('rate').innerHTML=[1,2,3,4,5].map(v=>`<button type="button" data-v="${v}">${v}★</button>`).join('');
+$('rate').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S.rating=+b.dataset.v;render()});
+
+$('form').addEventListener('input',e=>{
+  const t=e.target; if(!t.id||t.type==='file')return;
+  S[t.id] = t.type==='checkbox'?t.checked : t.type==='number'?Math.max(0,+t.value||0) : t.value;
+  render();
+});
+$('photoBtn').onclick=()=>$('photo').click();
+$('photo').onchange=e=>{
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader(); r.onload=()=>{S.photo=r.result;$('photoBtn').textContent='Remove';render()}; r.readAsDataURL(f);
+};
+$('photoBtn').addEventListener('click',e=>{
+  if(S.photo){e.stopImmediatePropagation();S.photo=null;$('photo').value='';$('photoBtn').textContent='Upload';render()}
+},true);
+
+let lastPreset=0;
+$('random').onclick=()=>{
+  let i; do{i=Math.floor(Math.random()*PRESETS.length)}while(i===lastPreset&&PRESETS.length>1);
+  lastPreset=i; Object.assign(S,PRESETS[i],{count:Math.floor(Math.random()*120)+1,helpful:Math.floor(Math.random()*900)+2});
+  syncForm(); render();
+};
+
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),1800)}
+
+$('save').onclick=async()=>{
+  const btn=$('save'); btn.disabled=true; btn.textContent='Rendering…';
+  try{
+    if(document.fonts?.ready) await document.fonts.ready;
+    const canvas=await html2canvas($('capture'),{scale:3,backgroundColor:null,useCORS:true});
+    const blob=await new Promise(r=>canvas.toBlob(r,'image/png'));
+    const file=new File([blob],`review-${S.platform}.png`,{type:'image/png'});
+    if(navigator.canShare?.({files:[file]}) && matchMedia('(pointer:coarse)').matches){
+      try{await navigator.share({files:[file]});}catch(_){}
+    }else{
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=file.name; a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href),2000); toast('Image saved');
+    }
+  }catch(err){console.error(err);toast('Could not render image')}
+  btn.disabled=false; btn.textContent='Save image';
+};
+
+syncForm(); render();
+</script>
+</body>
+</html>
