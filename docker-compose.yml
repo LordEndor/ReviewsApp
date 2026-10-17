@@ -1,0 +1,8 @@
+services:
+  reviewsapp:
+    build: .
+    image: reviewsapp:latest
+    container_name: reviewsapp
+    ports:
+      - "${PORT:-8080}:80"
+    restart: unless-stopped
