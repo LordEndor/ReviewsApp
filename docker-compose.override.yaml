@@ -1,5 +1,0 @@
-# Loaded automatically by `docker compose` (not by Coolify) to publish the app on a host port.
-services:
-  reviewsapp:
-    ports:
-      - "${PORT:-8080}:80"
