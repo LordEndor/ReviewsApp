@@ -1,9 +1,9 @@
 services:
   reviewsapp:
     build: .
-    expose:
-      - "80"
+    ports:
+      - "${PORT:-3006}:3006"
     environment:
-      # Coolify: generates a domain and routes it to port 80 in the container.
-      - SERVICE_FQDN_REVIEWSAPP_80
+      # Coolify: generates a domain and routes it to port 3006 in the container.
+      - SERVICE_FQDN_REVIEWSAPP_3006
     restart: unless-stopped
