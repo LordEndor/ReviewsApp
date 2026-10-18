@@ -26,6 +26,10 @@ The app is then served at `http://<your-server>:8080`. To use another port, set 
 PORT=3000 docker compose up -d --build
 ```
 
-(or put `PORT=3000` in a `.env` file next to `docker-compose.yml`).
+(or put `PORT=3000` in a `.env` file next to `docker-compose.yaml`).
 
 To update after pulling new changes, run `git pull && docker compose up -d --build`. Stop it with `docker compose down`.
+
+## Deploy with Coolify
+
+Create a new resource from this repository and pick **Docker Compose** as the build pack. Coolify reads `/docker-compose.yaml`, builds the image and gives the app a domain automatically (you can change it under the service's **Domains** setting). The host port mapping lives in `docker-compose.override.yaml`, which Coolify ignores, so nothing clashes with other apps on the server.
